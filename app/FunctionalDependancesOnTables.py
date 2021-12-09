@@ -1,9 +1,23 @@
 import sqlite3
 
 
-def getFD(listOfFDs, _table):          #retourne liste des FD de la table _table
-    notImplemented = True
+def getFD(_listOfFDs, _tabName):          #retourne liste des FD de la table _table
+    ret = []
+    for fd in _listOfFDs:
+        if (fd[0] == _tabName):
+            ret.append(fd)
+    return ret
 
+def printFD(_FD):
+    for i in range(len(_FD[1])):
+        if (i!=0):
+            print(", ",end="")
+        print(_FD[1][i],end="")
+    print("  -->  ",end="")
+    for i in range(len(_FD[2])):
+        if (i!=0):
+            print(", ",end="")
+        print(_FD[2][i],end="")
 
 def readFuncDep(_funcDep):
     notImplemented = True
