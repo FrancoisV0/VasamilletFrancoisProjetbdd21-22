@@ -115,7 +115,7 @@ if __name__=='__main__':
                 create_table(conn,tab)
             for row in allRowsTableFilms:
                 createRowInTableFilms(conn, row)
-            allFDs.append(FD1)
+            addFuncDep(FD1, allFDs)
             #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
             print("\nBienvenue dans le programme d'essai du module concernant les dépendances fonctionelles sur des tables.")
             while(True):

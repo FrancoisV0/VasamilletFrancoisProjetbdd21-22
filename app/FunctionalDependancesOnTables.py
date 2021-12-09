@@ -19,14 +19,35 @@ def printFD(_FD):
             print(", ",end="")
         print(_FD[2][i],end="")
 
-def readFuncDep(_funcDep):
-    notImplemented = True
+def addFuncDep(tableName, columns1, columns2, listOfFuncDep):
+    listOfFuncDep.append([tableName,columns1,columns2])
 
-def addFuncDep(_funcDep, listOfFuncDep):
-    notImplemented = True
+def addFuncDep(_FD, listOfFuncDep):
+    listOfFuncDep.append(_FD)
 
-def removeFuncDep(_funcDep, listOfFuncDep):
-    notImplemented = True
+def removeFuncDep(_FD, listOfFuncDep):
+    for i in range(len(listOfFuncDep)):
+        fd = listOfFuncDep[i]
+        same = True
+        if (fd[0] == _FD[0]):
+            for c in fd[1]:
+                if (c not in _FD[1]):
+                    same = False
+            for c in _FD[1]:
+                if (c not in fd[1]):
+                    same = False
+            for c in fd[2]:
+                if (c not in _FD[2]):
+                    same = False        
+            for c in _FD[2]:
+                if (c not in fd[2]):
+                    same = False
+        else:
+            same = False
+        if (same):
+            listOfFuncDep.pop(i)
+            return True
+    return False
 
 def changeFuncDep(_funcDep, listOfFuncDep):
     notImplemented = True
