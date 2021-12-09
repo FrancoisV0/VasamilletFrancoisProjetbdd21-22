@@ -55,6 +55,14 @@ def selectAllRowsInTable(conn, table):
             print(c, " "*(22-len(str(c))), end = "")
         print("")
 
+def getColumns(conn, tabName):
+    ret = []
+    tableInfo = "PRAGMA table_info("+tabName+")"
+    cur = conn.cursor()
+    cur.execute(tableInfo)
+    for info in cur.fetchall():
+        ret.append(info[1])
+    return ret
 
 def printAllTablesAndFD(conn, fds):     #affiche à l'écran les tables de façon correcte
     cur = conn.cursor()
@@ -63,11 +71,8 @@ def printAllTablesAndFD(conn, fds):     #affiche à l'écran les tables de faço
     for tabName in tables:
         tabName = str(tabName)
         print("'"+tabName[7:-2], "\n")
-        columnsName = "PRAGMA table_info("+tabName[2:-3]+")"
-        cur = conn.cursor()
-        cur.execute(columnsName)
-        for info in cur.fetchall():
-            print(info[1], " "*(22-len(str(info[1]))), end = "")
+        for col in getColumns(conn, tabName[2:-3]):
+            print(col, " "*(22-len(str(col))), end = "")
         print("")
         selectAllRowsInTable(conn, tabName[2:-3])
         print("")
@@ -116,6 +121,8 @@ if __name__=='__main__':
             for row in allRowsTableFilms:
                 createRowInTableFilms(conn, row)
             addFuncDep(FD1, allFDs)
+            
+            # getAllPossibleKeys(getColumns(conn, "tableFilms"))
             #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
             print("\nBienvenue dans le programme d'essai du module concernant les dépendances fonctionelles sur des tables.")
             while(True):

@@ -1,5 +1,5 @@
 import sqlite3
-
+from itertools import chain, combinations
 
 def getFD(_listOfFDs, _tabName):          #retourne liste des FD de la table _table
     ret = []
@@ -51,9 +51,6 @@ def removeFuncDep(_FD, listOfFuncDep):
 
 def changeFuncDep(_funcDep, listOfFuncDep):
     notImplemented = True
-
-def showFDs(listOfFuncDep):
-    notImplemented = True
     
 def getProblematicFDs(listOfFuncDep):
     notImplemented = True
@@ -62,9 +59,22 @@ def searchNextLogicalConsequence(listOfFuncDep):
     notImplemented = True
     
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-def findKeys(listOfFuncDep, table):             #retourne la liste des clés de la table sur base des FDs
-    FDsOnTable = getFD(listOfFuncDep, table)
-    notImplemented = True
+def getAllPossibleKeys(_columns):
+    allKeysPoss = []
+    s = list(_columns)
+    for x in chain.from_iterable(combinations(s, r) for r in range(len(s)+1)):
+        if (len(x) != 0):
+            if (len(x) == 1):
+                x = [str(str(x)[2:-3])]
+            else:
+                x = list(x)
+            allKeysPoss.append(x)
+    print(allKeysPoss)
+    return allKeysPoss
+
+def findKeys(_listOfFuncDep, _table, _columns):             #retourne la liste des clés de la table sur base des FDs
+    FDsOnTable = getFD(_listOfFuncDep, _table)
+    
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def BCNFfromDF():
