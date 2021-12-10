@@ -98,9 +98,12 @@ if __name__=='__main__':
     row6 = ("The Birds", "J. Cameron", "R. Taylor", "Paramount Pictures", "28/01/2001", 182)
     
     FD1 = ["Films",["Titre","Directeur"],["Societe","Premiere","Minutes"]]
+    FD2 = ["Films",["Premiere","Directeur"],["Titre"]]
+    FD3 = ["Films",["Acteur","Premiere"],["Titre","Directeur"]]
     
     database = "PythonSqlite"
     allTables = []
+    allTablesName = ["Films"]
     allFDs = []
     allRowsTableFilms = []
     
@@ -121,6 +124,8 @@ if __name__=='__main__':
             for row in allRowsTableFilms:
                 createRowInTableFilms(conn, row)
             addFuncDep(FD1, allFDs)
+            addFuncDep(FD2, allFDs)
+            addFuncDep(FD3, allFDs)
             
             # getAllPossibleKeys(getColumns(conn, "tableFilms"))
             #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -194,11 +199,11 @@ if __name__=='__main__':
                                 goOn = False
                 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                
                 elif (choix == 2): #Voir les clés des tables
-                
-                    for tab in allTables:
-                        print(tab)
-                        for key in findKeys(allFDforTab, tab):
-                            print(key)
+                    print("Voici les clés des tables: ")
+                    for tab in allTablesName:
+                        print("  ", tab, ": ")
+                        for key in findKeys(allFDs, tab, getColumns(conn, "table"+tab)):
+                            print("     ", key)
                         
                     print("Appuyez sur Enter pour continuer.")
                     input("")
