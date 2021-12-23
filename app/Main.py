@@ -2,13 +2,9 @@ import sqlite3
 import os
 from sqlite3 import Error
 from FunctionalDependancesOnTables import *
-#a t on besoin d'un vrai funcDep pour chaque table ?
-""" A DF will be represented as [string, string[], string[]] """
+""" Une dépendance fonctionelle est représentée par ["table", [attrGauche], [attrDroite]] """
 
-#Tables utilisées pour ce fichier
-
-
-"""Les X fonctions qui suivent sont reprises directement du tutoriel sqlite3 trouvé sur sqlitetutorial.net/sqlite-python"""
+"""Les 3 fonctions qui suivent sont reprises directement du tutoriel sqlite3 trouvé sur sqlitetutorial.net/sqlite-python"""
 def create_connection(db_file):
     conn = None
     try:
@@ -61,7 +57,7 @@ def getColumns(conn, table): #A modifier pour avoir les colonnes
         i+=1
     return ret
 
-def selectAllRowsInTable(conn, table):
+def printTable(conn, table):
     """
     Query all rows in the table table
     :param conn: the Connection object
@@ -87,7 +83,7 @@ def getAttr(conn, tabName):
         ret.append(info[1])
     return ret
 
-def printAllTablesAndFD(conn, fds):     #affiche à l'écran les tables de façon correcte
+def printAllTablesAndFD(conn, _listOfFD):     #affiche à l'écran les tables de façon correcte
     cur = conn.cursor()
     cur.execute("SELECT name FROM sqlite_schema WHERE type='table'")
     tables = (cur.fetchall())
@@ -97,9 +93,9 @@ def printAllTablesAndFD(conn, fds):     #affiche à l'écran les tables de faço
         for col in getAttr(conn, tabName[2:-3]):
             print(col, " "*(22-len(str(col))), end = "")
         print("")
-        selectAllRowsInTable(conn, tabName[2:-3])
+        printTable(conn, tabName[2:-3])
         print("")
-        fdsForTab = getFD(fds, tabName[7:-3])
+        fdsForTab = getFD(_listOfFD, tabName[7:-3])
         for fd in fdsForTab:
             printFD(fd)
         print("\n")
@@ -132,7 +128,7 @@ if __name__=='__main__':
     database = "PythonSqlite"
     allTables = []
     allTablesName = ["Films"]
-    allFDs = []
+    allFD = []
     allRowsTableFilms = []
     
     
@@ -148,29 +144,27 @@ if __name__=='__main__':
     if conn is not None:
         with conn:
             for tab in allTables:
-                create_table(conn,tab)
+                create_table(conn, tab)
             for row in allRowsTableFilms:
                 createRowInTableFilms(conn, row)
-            addFuncDep(FD1, allFDs)
-            addFuncDep(FD2, allFDs)
-            addFuncDep(FD3, allFDs)
-            addFuncDep(FD4, allFDs)
-            addFuncDep(FD5, allFDs)
-            addFuncDep(FD6, allFDs)
-            addFuncDep(FD7, allFDs)
-            addFuncDep(FD8, allFDs)
-            
-            # getAllPossibleKeys(getAttr(conn, "tableFilms"))
+            addFuncDep(FD1, allFD)
+            addFuncDep(FD2, allFD)
+            addFuncDep(FD3, allFD)
+            addFuncDep(FD4, allFD)
+            addFuncDep(FD5, allFD)
+            addFuncDep(FD6, allFD)
+            addFuncDep(FD7, allFD)
+            addFuncDep(FD8, allFD)
             #---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-            print("\nBienvenue dans le programme d'essai du module concernant les dépendances fonctionelles sur des tables.")
+            print("\nBienvenue dans le programme d'essai du module concernant les dépendances fonctionelles sur les tables.")
             while(True):
                 print("Voici les tables et dépendances fonctionelles sur lesquelles on travaille actuellement:\n")
-                printAllTablesAndFD(conn, allFDs)
+                printAllTablesAndFD(conn, allFD)
 
                 choix = 0
                 while (choix not in [1,2,3,4]):
                     print("\nQue souhaitez-vous faire ?\n")
-                    print("1. Voir/modifier une/des DF(s)\n"\
+                    print("1. Voir/modifier une/des DF\n"\
                         "2. Voir les clés des tables\n"\
                         "3. Voir quelles tables respectent les normes BCNF et 3NF\n"\
                         "4. Quittez le programme\n")
@@ -179,7 +173,6 @@ if __name__=='__main__':
                         choix = int(inp)
                     else:
                         print("\nChoix non reconnu !")
-                    
                 goOn = True
                 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
                 if (choix == 1):   #Voir/modifier une/des DF(s)
@@ -196,24 +189,25 @@ if __name__=='__main__':
                                 choix = int(inp)
                             else:
                                 print("\nChoix non reconnu !")
-                        
                         if (choix == 1):                        #Voir les dfs des tables
                             print("Voici les DF des tables: ")
-                            for tab in allTablesName:
-                                print("  ", tab, ": ")
-                                for FD in getFD(allFDs, tab):
+                            for tabName in allTablesName:
+                                print("  ", tabName, ": ")
+                                for FD in getFD(allFD, tabName):
                                     print("     ", end="")
                                     printFD(FD)
-                        elif (choix == 2):                      #ajouter une df (et proposer dedans des bons candidats)
+                        elif (choix == 2):                      #ajouter une df (et proposer dedans des bons candidats selon la table actuelle)
                             notOk = True
                             _funcDep = []
                             while (notOk):
                                 notOk = False
-                                print("Voici les DFs conseillées actuellement:")
-                                #afficher les DFs conseillées
+                                print("Voici les DFs conseillées actuellement:\n")
+                                for tabName in allTablesName:
+                                    for FD in (getAdvicedFD(getColumns(conn, "table"+tabName), tabName, getAttr(conn, "table"+tabName))):
+                                        printFD(FD)
                                 tableName = ""
                                 while (tableName not in allTablesName):
-                                    tableName = input("Saisissez le nom de la table à laquelle ajouter la DF:")
+                                    tableName = input("\nSaisissez le nom de la table à laquelle ajouter la DF:")
                                 again = True
                                 nec = []
                                 while (again):
@@ -223,7 +217,7 @@ if __name__=='__main__':
                                     else:
                                         print(inp, " n'appartient pas aux attributs de la table.")
                                     inp = input("Encore un autre ? (O/N) ")
-                                    if (inp == "N" or inp == "0" or inp == "non" or inp == "n"):
+                                    if (inp == "N" or inp == "0" or inp == "non" or inp == "n" or inp == "Non"):
                                         again = False
                                 again = True
                                 csq = []
@@ -234,49 +228,53 @@ if __name__=='__main__':
                                     else:
                                         print(inp, " n'appartient pas aux attributs de la table.")
                                     inp = input("Encore un autre ? (O/N) ")
-                                    if (inp == "N" or inp == "0" or inp == "non" or inp == "n"):
+                                    if (inp == "N" or inp == "0" or inp == "non" or inp == "n" or inp == "Non"):
                                         again = False
-                                _funcDep = [tableName,nec,csq]
-                                print(_funcDep, end="")
-                                inp = input(" est la DF crée, confirmer ?")
-                                if (inp == "N" or inp == "0" or inp == "non" or inp == "n"):
-                                    inp = input("Voulez-vous en en recréer une ?")
-                                    if (not (inp == "N" or inp == "0" or inp == "non" or inp == "n")):
-                                        notOk = True
-                            addFuncDep(_funcDep, allFDs)
-                            
-                        elif (choix == 3):                      #Enlever une df (et proposer dedans des conséquences logiques, non satisfaites ou pas attributs) empêcher les df ou table n'existe pas ?
+                                if (nec and csq):
+                                    newFD = [tableName,nec,csq]
+                                    print(newFD, end="")
+                                    inp = input(" est la DF crée, confirmer ?")
+                                    if (inp == "N" or inp == "0" or inp == "non" or inp == "n" or inp == "Non"):
+                                        inp = input("Voulez-vous en en recréer une ?")
+                                        if (not (inp == "N" or inp == "0" or inp == "non" or inp == "n" or inp == "Non")):
+                                            notOk = True
+                                    else:
+                                        addFuncDep(newFD, allFD)
+                                print("\nAucun champ ne peux être laissé vide !")
+                        elif (choix == 3):                      #Enlever une df (et proposer des conséquences logiques ou non satisfaites)
                             print("Voici toutes les DF actuelles :")
                             i=0
-                            while (i<len(allFDs)):
+                            while (i<len(allFD)):
                                 print("    ", i, ". ", end="")
-                                printFD(allFDs[i])
+                                printFD(allFD[i])
                                 i+=1
-                            print("Voici les DFs conseillées:")
-                            problematicDFs = getProblematicFDs(conn, allFDs)
-                            for FD in problematicDFs:
-                                print("     (",FD[1],")     ", allFDs.index(FD[0]), ". ", end="")
-                                printFD(FD[0])
+                            print("Voici les DF conseillées:")
+                            problematicFD = []
+                            for tabName in allTablesName:
+                                problematicFD.append(getProblematicFD(getColumns(conn, "table"+tabName), getFD(allFD, tabName)))
+                            for l in problematicFD:
+                                for FD in l:
+                                    print("     (",FD[1],")     ", allFD.index(FD[0]), ". ", end="")
+                                    printFD(FD[0])
                             inp = input("Entrez le numéro de la DF à enlever : ")
-                            if (inp.isnumeric() and int(inp)<len(allFDs)):
+                            if (inp.isnumeric() and int(inp)<len(allFD)):
                                 choix = int(inp)
-                                removeFuncDep(allFDs[choix], allFDs)
+                                removeFuncDep(allFD[choix], allFD)
                             else:
                                 print("\nChoix non reconnu !")                        
                         elif (choix == 4):                      #Quitter le menu modifiant les DF
                             goOn = False
-                        
-                        if (goOn):
-                            print("\nSouhaitez-vous faire une autre action sur les DFs ?(O/N)\n")
+                        if (goOn):                              #Proposition de faire une autre action
+                            print("\nSouhaitez-vous faire une autre action sur les DF ?(O/N)\n")
                             inp = input("")
-                            if (inp == "N" or inp == "n"):
+                            if (inp == "N" or inp == "0" or inp == "non" or inp == "n" or inp == "Non"):
                                 goOn = False
                 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                
                 elif (choix == 2): #Voir les clés des tables
                     print("Voici les clés des tables: ")
-                    for tab in allTablesName:
-                        print("  ", tab, ": ")
-                        for key in findKeys(allFDs, tab, getAttr(conn, "table"+tab)):
+                    for tabName in allTablesName:
+                        print("  ", tabName, ": ")
+                        for key in findKeys(getFD(allFD, tabName), getAttr(conn, "table"+tabName)):
                             print("     ", key)
                         
                     print("\nAppuyez sur Enter pour continuer.")
@@ -285,9 +283,9 @@ if __name__=='__main__':
                 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------                
                 elif (choix == 3): #Voir quelles tables respectent les normes BCNF et 3NF
                     print("Voici les tables et leurs indications : ")
-                    for tab in allTablesName:
-                        print("  ", tab, ": ")
-                        indications = isTableinBCNFor3NF(tab, allFDs, getAttr(conn, "table"+tab), findKeys(allFDs, tab, getAttr(conn, "table"+tab)))
+                    for tabName in allTablesName:
+                        print("  ", tabName, ": ")
+                        indications = isTableinBCNFor3NF(getFD(allFD, tabName), findKeys(getFD(allFD, tabName), getAttr(conn, "table"+tabName)))
                         print("     3NF : ", end="")
                         if (indications[0]):
                             print("Oui")
