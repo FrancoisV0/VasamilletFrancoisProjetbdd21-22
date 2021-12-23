@@ -1,4 +1,5 @@
 import sqlite3
+from Main import *
 from itertools import chain, combinations
 
 def getFD(_listOfFDs, _tabName):          #retourne liste des FD de la table _table
@@ -62,14 +63,71 @@ def removeFuncDep(_FD, listOfFuncDep):
             return True
     return False
 
-def changeFuncDep(_funcDep, listOfFuncDep):
-    notImplemented = True
+def getAdvicedFD(_listOfFuncDep, _table, _attr):
+    ret = []
+    cols = getColumns(conn, "table"+FD[0])
+    for attr in _attr:
+        for col in cols:
+            if (col[0] != attr):
+                csq = []
+                #si il implique un autre attribut, l'ajouter à csq
+                #si csq pas vide, l'ajouter à ret
+    for col1 in cols:
+        for col in cols[cols.index(col1):]:
+            csq = []
+            #si ils impliquent un autre attribut, l'ajouter à csq
+            #si csq pas vide, l'ajjouter à ret
+    #enlever toutes les conséquences logiques de la liste (qui sont déjà présent avant)
     
-def getProblematicFDs(listOfFuncDep):
-    notImplemented = True
-
-def searchNextLogicalConsequence(listOfFuncDep):
-    notImplemented = True
+def getProblematicFDs(conn, _listOfFuncDep):
+    ret = [] #On retourne une liste de tuple de la forme (df,raisonDeRejet)
+    #df redondante
+    for DF1 in _listOfFuncDep:
+        for DF2 in _listOfFuncDep:
+            for DF3 in _listOfFuncDep:
+                if(DF1 != DF2 and DF2 != DF3 and DF1 != DF3):
+                    nec1, nec2, nec3 = getNec(DF1), getNec(DF2), getNec(DF3)
+                    csq1, csq2, csq3 = getCsq(DF1), getCsq(DF2), getCsq(DF3)
+                    bool = True
+                    for a in nec1:
+                        if (a not in nec2):
+                            bool = False
+                    if (bool and csq1 == csq2):
+                        ret.append((DF2,"La DF est redondante"))
+                    if (nec1 == nec3 and csq1 == nec2 and csq2 == csq3):
+                        ret.append((DF3,"La DF est déjà une conséquence logique"))
+    #df pas respectée
+    for FD in _listOfFuncDep:
+        cols = getColumns(conn, "table"+FD[0])
+        n, c = getNec(FD), getCsq(FD)
+        nec, csq = [], []
+        for col in cols:
+            if (col[0] in n):
+                nec.append(col)
+            elif (col[0] in c):
+                csq.append(col)
+        i = 1
+        while (i < len(nec[0])):
+            j = 1
+            while (i+j < len(nec[0])):
+                bool1 = True
+                for n1 in nec:
+                    if (n1[i] != n1[j]):
+                        bool1 = False
+                if (bool1):
+                    for c1 in csq:
+                        if (c1[i] != c1[j]):
+                            ret.append((FD,"La DF n'est pas respectée"))
+                j+=1
+            i+=1
+    for r1 in ret:              #Elimine les doublons de la liste
+        i = ret.index(r1) + 1
+        while (i < len(ret)):
+            if (r1 == ret[i]):
+                ret.pop(i)
+                i-=1
+            i+=1
+    return ret
     
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 def getAllPossibleKeys(_columns):       #Retourne toutes les clés possibles i.e. une combinaison de toutes les colonnes
@@ -90,9 +148,9 @@ def copyCol(listOfCol):                 #Fait une deepcopy d'une liste de colonn
         ret.append(c)
     return ret
     
-def findKeys(_listOfFuncDep, _table, _columns):             #retourne la liste des clés de la table sur base des FDs
+def findKeys(_listOfFuncDep, _table, _attr):             #retourne la liste des clés de la table sur base des FDs
     FDsOnTable = getFD(_listOfFuncDep, _table)
-    allKeys = getAllPossibleKeys(_columns)
+    allKeys = getAllPossibleKeys(_attr)
     ret = []
     for keyPoss in allKeys:
         actCol = copyCol(keyPoss)       #Cette liste ajoute les colonnes "impliquée" par la clé au fur et à mesure des dfs
@@ -111,7 +169,7 @@ def findKeys(_listOfFuncDep, _table, _columns):             #retourne la liste d
                             actCol.append(c)
                             retry = True
         cont = True
-        for c in _columns:              #Vérifie si keyPoss est bien une clé i.e. elle "implique" toutes les colonnes de la table
+        for c in _attr:              #Vérifie si keyPoss est bien une clé i.e. elle "implique" toutes les colonnes de la table
             if (c not in actCol):
                 cont = False
         if (cont):
@@ -128,22 +186,23 @@ def findKeys(_listOfFuncDep, _table, _columns):             #retourne la liste d
     return ret
     
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-def BCNFfromDF():
-    listOfProblematic = []
-    return listOfProblematic
-    
-def is3NFfromDF():
-    listOfProblematic = []
-    return listOfProblematic
-    
-def isTableAndDFinBCNFand3NF():
-    #vérifier BCNF
-    #si oui vérifier 3NF, si non pas 3NF
-    notImplemented = True
-    
-def whyTableAndDFnotInBCNFand3NF():
-    notImplemented = True
-    
-def exportDecomposition3NF():
-    notImplemented = True
-    
+def isTableinBCNFor3NF(_table, _listOfFuncDep, _attr, _tableKeys):
+    boolBCNF = True
+    reasonNotBCNF = []
+    bool3NF = True
+    reasonNot3NF = []
+    FDsOnTable = getFD(_listOfFuncDep, _table)
+    for FD in FDsOnTable:
+        nec = getNec(FD)
+        csq = getCsq(FD)
+        if (nec not in _tableKeys):
+            boolBCNF = False
+            reasonNotBCNF.append(FD)
+            csqInKey = False
+            for Key in _tableKeys:
+                if (csq in Key):
+                    csqInKey = True
+            if (not csqInKey):
+                bool3NF = False
+                reasonNot3NF.append(FD)
+    return [bool3NF,boolBCNF,reasonNot3NF,reasonNotBCNF]
